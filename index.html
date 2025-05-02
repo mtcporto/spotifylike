@@ -1,0 +1,2379 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bandas de João Pessoa - App Like Spotify</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Modern Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --main-bg-color: #121212;
+            --card-bg-color: #181818;
+            --text-color: #ffffff;
+            --accent-color: #1DB954; /* Spotify Green */
+            --secondary-color: #b3b3b3; /* Lighter gray */
+            --hover-color: #282828; /* Darker gray for hover */
+        }
+
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--text-color);
+            font-family: 'Open Sans', sans-serif;
+            font-weight: 400;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .display-4 {
+            font-family: 'Montserrat', sans-serif; /* Ensure display-4 uses Montserrat */
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .lead {
+            font-family: 'Open Sans', sans-serif; /* Ensure lead uses Open Sans */
+            font-weight: 400;
+            font-size: 1.1rem;
+            color: var(--secondary-color);
+        }
+
+        .container {
+            padding-top: 20px;
+            padding-bottom: 100px; /* Espaço para o player fixo */
+        }
+
+        header {
+            position: relative;
+            color: white;
+            padding: 3rem 0; /* Aumentar padding */
+            margin-bottom: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 300px; /* Aumentar altura mínima */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 1;
+             /* Fallback background initially */
+            background: linear-gradient(135deg, #121212 0%, #1d3264 100%);
+            transition: background 1s ease; /* Smooth transition for fallback */
+        }
+
+        header .container {
+             /* Position for Vantajs content */
+            position: relative;
+            z-index: 2; /* Content above Vantajs */
+        }
+
+        /* Estilos para ajudar a legibilidade do texto sobre os efeitos */
+        header h1, header p {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .song {
+            cursor: default; /* Default cursor unless it's locally playable */
+            transition: background-color 0.2s ease-in-out;
+            padding: 10px;
+            border-radius: 4px;
+        }
+         /* Style for locally playable rows */
+         .song.local-playable {
+             cursor: pointer;
+         }
+
+        .song:hover.local-playable { /* Apply hover only to playable rows */
+            background-color: var(--hover-color);
+        }
+
+        /* Style for table rows within the playlist */
+        #playlist .song {
+             /* Reset default table padding */
+             padding: initial;
+             border-radius: initial;
+        }
+
+        #playlist .song td, #playlist .song th {
+            padding: 10px; /* Add padding back to table cells */
+            vertical-align: middle;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+         #playlist tr:last-child td, #playlist tr:last-child th {
+             border-bottom: none; /* Remove border from last row */
+         }
+
+         /* Ensure Spotify links within table cells don't get row hover */
+         #playlist .song td a {
+             display: inline-flex; /* Allows icon and text to align */
+             align-items: center;
+             text-decoration: none; /* Remove underline */
+             color: var (--text-color); /* Default text color */
+             transition: color 0.2s ease-in-out;
+             cursor: pointer; /* Link itself is clickable */
+         }
+
+         #playlist .song td a:hover {
+             color: var(--accent-color); /* Change color on link hover */
+         }
+
+         /* Ensure the play icon is only visible for local playable rows */
+         .song:not(.local-playable) .play-icon {
+             display: none;
+         }
+
+
+        .song:hover.local-playable .play-icon { /* Apply hover only to playable rows */
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .play-icon {
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.2s linear;
+            color: var(--accent-color);
+            margin-right: 8px;
+        }
+
+        .playing {
+            background-color: rgba(29, 185, 84, 0.2); /* Spotify Green with transparency */
+            color: var(--text-color); /* Keep text color standard */
+        }
+         /* Ensure playing row text stays white */
+         .playing td, .playing th, .playing a {
+            color: var(--text-color) !important;
+         }
+         .playing .play-icon {
+             color: var(--accent-color); /* Keep icon green */
+         }
+
+
+        .playing.local-playable .play-icon {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .card {
+            background-color: var(--card-bg-color);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease-in-out;
+            margin-bottom: 30px;
+            overflow: hidden; /* Ensure image corners are rounded */
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-img-top {
+            object-fit: cover;
+            border-radius: 8px 8px 0 0;
+            height: 200px;
+            width: 100%;
+             /* Ensure img itself doesn't show if wrapper is used */
+             display: block; /* Needs display block for height/width in wrapper */
+             opacity: 1; /* Ensure it's not hidden */
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-family: 'Montserrat', sans-serif; /* Use Montserrat for title */
+            font-weight: 600;
+            font-size: 1rem; /* Ajustar tamanho */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px; /* Add margin below title */
+        }
+
+        .card-text {
+             font-family: 'Open Sans', sans-serif; /* Use Open Sans */
+             font-size: 0.9rem;
+             color: var(--secondary-color);
+             margin-bottom: 5px; /* Add margin below text */
+        }
+
+        .table {
+            background-color: transparent;
+            color: var(--text-color);
+            border: none;
+        }
+
+        .table thead th {
+            background-color: var(--main-bg-color);
+            color: var(--secondary-color);
+            border-top: none;
+            border-bottom: 1px solid #2a2a2a;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+        }
+
+        .table tbody tr {
+             /* No default border, handled by .song padding */
+             border-bottom: none;
+        }
+
+
+        .play-button, .shuffle-button {
+            font-size: 2rem; /* Ajustar tamanho */
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, color 0.2s ease-in-out;
+            padding: 10px;
+            border-radius: 50%;
+        }
+
+        .play-button {
+            color: var(--accent-color);
+        }
+
+         .shuffle-button {
+             color: var(--secondary-color);
+         }
+
+        .play-button:hover:not(:disabled), .shuffle-button:hover:not(:disabled) {
+            transform: scale(1.1);
+            background-color: rgba(255, 255, 255, 0.1); /* Subtle hover effect */
+        }
+         .play-button:disabled, .shuffle-button:disabled {
+             opacity: 0.5;
+             cursor: not-allowed;
+         }
+
+
+        .shuffle-button.active {
+            color: var(--accent-color);
+        }
+
+        .player-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #282828;
+            padding: 15px;
+            z-index: 1000;
+            border-top: 1px solid #333;
+            box-shadow: 0 -44px 8px rgba(0, 0, 0, 0.2); /* Adjust shadow height */
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Distribute items */
+        }
+
+        .player-controls {
+            width: 100%;
+            max-width: 1140px; /* Match container max-width */
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+             justify-content: space-between;
+        }
+
+        .now-playing-info {
+            flex-basis: 30%; /* Give it some width */
+            display: flex;
+            align-items: center;
+            margin-right: 15px; /* Space between info and controls */
+             min-width: 150px; /* Prevent shrinking too much */
+        }
+
+        .now-playing-cover {
+            width: 60px; /* Slightly larger */
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 12px;
+             flex-shrink: 0; /* Prevent image from shrinking */
+             /* Ensure img itself doesn't show if wrapper is used */
+             display: block;
+             opacity: 1;
+        }
+
+        .now-playing-text {
+            flex-grow: 1; /* Allow text to grow */
+            overflow: hidden; /* Hide overflow text */
+            margin-left: 8px;
+        }
+
+        .now-playing-title {
+            font-family: 'Montserrat', sans-serif; /* Use Montserrat for title */
+            font-weight: 600;
+            font-size: 0.9rem; /* Ajustar tamanho */
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .now-playing-artist {
+            font-family: 'Open Sans', sans-serif; /* Use Open Sans for artist */
+            font-size: 0.75rem; /* Ajustar tamanho */
+            color: var(--secondary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-center {
+            flex-basis: 40%; /* More width for controls/seekbar */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+             min-width: 300px; /* Prevent shrinking too much */
+        }
+
+        .player-center audio {
+            width: 100%;
+            max-width: 600px; /* Max width for audio element */
+            background-color: transparent !important;
+            color: white;
+        }
+
+        /* Style for the default audio controls */
+        audio::-webkit-media-controls-panel {
+            background-color: rgba(33, 33, 33, 0.85) !important; /* Fundo escuro e semitransparente */
+            box-shadow: none;
+            border-radius: 4px;
+        }
+         audio::-webkit-media-controls-current-time-display,
+         audio::-webkit-media-controls-time-remaining-display {
+             color: #ffffff !important; /* Texto branco */
+             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7); /* Sombra para legibilidade */
+         }
+        /* Apply filter to individual controls for better compatibility */
+        /* Using a mix of brightness and invert to get desired light color */
+        audio::-webkit-media-controls-play-button,
+        audio::-webkit-media-controls-mute-button,
+        audio::-webkit-media-controls-volume-slider,
+        audio::-webkit-media-controls-timeline-container,
+        audio::-webkit-media-controls-volume-control,
+        audio::-webkit-media-controls-seek-back-button,
+        audio::-webkit-media-controls-seek-forward-button,
+        audio::-webkit-media-controls-fullscreen-button,
+        audio::-webkit-media-controls-rewind-button,
+        audio::-webkit-media-controls-return-to-realtime-button,
+        audio::-webkit-media-controls-toggle-closed-captions-button {
+            filter: brightness(0) invert(1) !important; /* Forçar cor branca */
+        }
+         audio::-webkit-media-controls-timeline {
+             background-color: #555 !important; /* Darker grey timeline background */
+             border-radius: 10px;
+             margin: 0 10px; /* Space around timeline */
+         }
+
+        /* Hide download button */
+        audio::-webkit-media-controls-download-button {
+            display: none;
+        }
+        /* Firefox controls (less control with pseudo-elements) */
+        /* Styling is complex and unreliable cross-browser for native controls */
+        audio::-moz-media-controls-play-button,
+        audio::-moz-media-controls-mute-button,
+        audio::-moz-media-controls-volume-slider,
+        audio::-moz-media-controls-current-time-label,
+        audio::-moz-media-controls-time-label,
+        audio::-moz-media-controls-timeline {
+             /* Relying on browser default dark mode styling */
+        }
+
+
+        .album-info-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .album-actions {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+             gap: 15px; /* Space between buttons */
+        }
+
+        .search-form {
+            margin-bottom: 30px;
+        }
+
+        .form-control {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            color: var(--text-color);
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .form-control:focus {
+            background-color: #333;
+            color: var(--text-color);
+            box-shadow: 0 0 0 0.2rem rgba(29, 185, 84, 0.25); /* Spotify green shadow */
+            border-color: var(--accent-color);
+        }
+
+        .btn-search {
+            background-color: var(--accent-color);
+            border: none;
+            color: white;
+        }
+
+        .btn-search:hover {
+            background-color: #1aa34a; /* Slightly darker green */
+        }
+
+         /* Placeholder styles */
+         /* Use a div with background-image for better control than ::before on <img> */
+        .placeholder-img-wrapper { /* Wrapper div */
+            background-color: #232323; /* Dark background for placeholder */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 0.9rem;
+            text-align: center;
+             font-family: 'Open Sans', sans-serif;
+             position: relative; /* Needed for absolute text */
+             overflow: hidden; /* Ensure text doesn't overflow */
+             /* Default dimensions - overridden by size classes below */
+             width: auto;
+             height: auto;
+        }
+
+        /* Specific sizes for placeholder wrappers */
+        .card-img-placeholder {
+            height: 200px;
+            border-radius: 8px 8px 0 0;
+             width: 100%; /* Take full width of card */
+        }
+
+        .album-img-placeholder {
+            height: 300px;
+            border-radius: 8px 8px 0 0;
+             width: 100%; /* Take full width of card */
+        }
+
+        .mini-img-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+             flex-shrink: 0; /* Prevent shrinking */
+        }
+
+         /* Hide the actual img element when inside a placeholder wrapper */
+        .placeholder-img-wrapper img {
+             opacity: 0;
+             visibility: hidden;
+             width: 100%; /* Still maintain layout space */
+             height: 100%;
+             object-fit: cover; /* Ensure object-fit is kept */
+             border-radius: inherit; /* Inherit border-radius */
+        }
+         /* Style for the text inside the placeholder wrapper */
+         .placeholder-img-wrapper span {
+             position: absolute;
+             top: 50%;
+             left: 50%;
+             transform: translate(-50%, -50%);
+             z-index: 1; /* Above the hidden image */
+             color: #555; /* Text color */
+             font-size: 0.9rem; /* Text size */
+             text-align: center;
+             padding: 5px; /* Add padding */
+             white-space: normal; /* Allow wrapping */
+             word-break: break-word; /* Break long words */
+             max-width: 90%; /* Limit text width */
+         }
+
+
+        .audio-preview {
+            margin-top: 20px;
+        }
+
+        .no-tracks-message, .spotify-message {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+         /* Style for the info message row in the playlist */
+         #playlist .info-message-row td {
+             padding: 0; /* Remove padding */
+             border-bottom: none; /* Remove border */
+         }
+         #playlist .info-message-row .spotify-message {
+             margin: 0; /* Remove margin */
+             border-radius: 0; /* Remove border-radius */
+             background-color: #181818; /* Match row background or slightly darker */
+             color: var(--secondary-color);
+         }
+          #playlist .info-message-row .spotify-message p {
+              margin: 5px 0; /* Smaller vertical margin */
+          }
+
+
+        .no-tracks-message {
+             background-color: #202020;
+             color: var (--secondary-color);
+        }
+
+        .spotify-message {
+            background-color: #1a3264; /* Darker blueish */
+            color: white;
+        }
+
+        .spotify-message p {
+             margin-bottom: 0.5rem;
+        }
+         .spotify-message p:last-child {
+             margin-bottom: 0;
+         }
+
+        .spotify-message .btn-success {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            font-weight: bold;
+            margin-top: 10px; /* Space below message */
+        }
+
+        .spotify-message .btn-success:hover {
+            background-color: #1aa34a;
+            border-color: #1aa34a;
+        }
+
+        .btn .fab.fa-spotify {
+            font-size: 1.2em;
+        }
+
+        /* Carrossel de artistas */
+        .carousel-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+             /* Ensure overflow allows scroll */
+             overflow: hidden;
+        }
+
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background-color: rgba(30, 30, 30, 0.7);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+             opacity: 0.8;
+             /* Prevent selection */
+             user-select: none;
+             -webkit-user-select: none;
+             touch-action: manipulation; /* Improve touch behavior */
+        }
+
+        .carousel-nav:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-50%) scale(1.1); /* Scale on hover */
+             opacity: 1;
+        }
+
+        .prev-btn {
+            left: 5px;
+        }
+
+        .next-btn {
+            right: 5px;
+        }
+
+        .carousel-nav.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .slider-container {
+            /* Removed margin, it's handled by carousel-wrapper padding if needed */
+            margin: 0;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 15px 50px; /* Add padding to make space for buttons */
+             box-sizing: border-box; /* Include padding in width */
+            scroll-behavior: smooth;
+            scrollbar-width: none; /* Para Firefox */
+             flex-grow: 1; /* Allow container to fill wrapper */
+        }
+
+        .slider-container::-webkit-scrollbar {
+            display: none; /* Para Chrome, Safari e Opera */
+        }
+
+         .slider-item {
+             display: inline-block;
+             width: 200px;
+             margin-right: 20px; /* Increased spacing */
+             vertical-align: top;
+             cursor: pointer;
+             transition: transform 0.3s ease-in-out;
+         }
+
+        .slider-item:last-child {
+            margin-right: 0;
+        }
+
+         .slider-item .card {
+             margin-bottom: 0; /* Remove extra margin */
+         }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .player-container {
+                 flex-direction: column;
+                 padding-bottom: 90px; /* More space for mobile player */
+                 padding-left: 10px;
+                 padding-right: 10px;
+            }
+
+             .player-controls {
+                 flex-direction: column;
+                 align-items: flex-start;
+             }
+
+            .now-playing-info {
+                 width: 100%;
+                 margin-bottom: 10px;
+                 margin-right: 0;
+                 min-width: auto;
+             }
+             .now-playing-text {
+                 width: calc(100% - 72px); /* Account for cover image and margin */
+                 margin-left: 5px;
+             }
+
+
+             .player-center {
+                 width: 100%;
+                 flex-basis: auto; /* Auto width */
+                 min-width: auto;
+             }
+
+             .album-actions {
+                 flex-direction: column;
+                 align-items: flex-start;
+                 gap: 10px; /* Adjust gap */
+             }
+
+             .album-actions .btn {
+                 margin-bottom: 0 !important; /* Remove mb from column */
+                 margin-right: 0 !important; /* Remove mr */
+                 width: 100%;
+             }
+
+             .slider-item {
+                 width: 150px; /* Smaller cards on mobile */
+                 margin-right: 15px;
+             }
+
+             .card-img-placeholder {
+                 height: 150px;
+             }
+
+             .card-title {
+                 font-size: 0.8rem;
+             }
+
+             .no-tracks-message, .spotify-message {
+                 font-size: 0.85rem;
+             }
+
+             .display-4 {
+                 font-size: 2rem;
+             }
+
+             .lead {
+                 font-size: 1rem;
+             }
+             .slider-container {
+                 padding: 15px 40px; /* Adjust padding for smaller buttons/margin */
+             }
+             .carousel-nav {
+                 width: 30px;
+                 height: 30px;
+             }
+        }
+
+        /* Adicionar estes estilos para corrigir o posicionamento das imagens */
+        .album-img-placeholder {
+            width: 300px;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .album-img-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mini-img-placeholder {
+            width: 56px;
+            height: 56px;
+            position: relative;
+            overflow: hidden;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .mini-img-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .placeholder-img-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #232323;
+            text-align: center;
+            color: #555;
+        }
+
+        /* Corrigir o now-playing-cover que está ficando enorme */
+        #now-playing-cover {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+        }
+
+        #now-playing-cover-wrapper {
+            width: 56px;
+            height: 56px;
+            overflow: hidden;
+        }
+
+        /* Corrigir o album-image para manter suas dimensões */
+        #album-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #album-image-wrapper {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            margin-right: 0;
+            border-radius: 8px 8px 0 0;
+        }
+
+        /* Garantir que as imagens dos cards tenham tamanho correto */
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        /* Correção para o layout da página de álbum */
+        .album-header {
+            display: flex;
+            margin-bottom: 30px;
+            align-items: flex-start;
+        }
+
+        .album-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .album-title {
+            margin-top: 0;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <header id="header"> <!-- Added ID for Vantajs target -->
+        <div class="container">
+            <div class="text-center">
+                <h1 class="display-4">Bandas de João Pessoa</h1>
+                <p class="lead">Descubra a música local paraibana</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="search-form">
+            <div class="input-group">
+                <input type="text" id="search-input" class="form-control" placeholder="Buscar artista de João Pessoa..."> <!-- Simplified search text -->
+                <div class="input-group-append">
+                    <button class="btn btn-search" type="button" id="search-button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-4">Artistas Destacados</h3>
+        <!-- Wrapper for carousel navigation - Static HTML -->
+        <div class="carousel-wrapper">
+            <button class="carousel-nav prev-btn" id="prev-artist-btn"><i class="fas fa-chevron-left"></i></button>
+            <div class="slider-container" id="featured-artists">
+                <!-- Conteúdo carregado dinamicamente -->
+                 <!-- Added a simple loading indicator -->
+                <div class="text-center w-100">
+                    <div class="spinner-border text-light" role="status"></div>
+                    <p>Carregando artistas...</p>
+                </div>
+            </div>
+            <button class="carousel-nav next-btn" id="next-artist-btn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+
+        <div id="album-view" class="mt-5">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <!-- Use um wrapper simples sem classes adicionais -->
+                        <div id="album-image-wrapper">
+                            <img id="album-image" src="" class="card-img-top" alt="Capa do Álbum">
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title" id="album-title">Selecione um artista ou álbum</h5>
+                            <p class="card-text" id="album-info"></p>
+                            <div class="album-actions">
+                                <button class="btn btn-success btn-lg" id="play-all" disabled>
+                                    <i class="fas fa-play"></i> Tocar
+                                </button>
+                                <button class="btn btn-outline-light" id="shuffle-all" disabled>
+                                    <i class="fas fa-random"></i> Aleatório
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h3>Músicas</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width: 5%;">#</th>
+                                <th scope="col">Título</th>
+                                <th scope="col" style="width: 15%;">Duração</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playlist">
+                            <tr><td colspan="3" class="text-center no-tracks-message">Selecione um artista para ver as músicas</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="player-container">
+        <div class="player-controls">
+            <div class="now-playing-info">
+                 <!-- Added a wrapper div for the now playing image -->
+                <div class="mini-img-placeholder placeholder-img-wrapper" id="now-playing-cover-wrapper">
+                    <img id="now-playing-cover" class="now-playing-cover" src="" alt="Capa Atual">
+                     <span>Capa</span> <!-- Placeholder text -->
+                </div>
+                <div class="now-playing-text">
+                    <div id="now-playing-title" class="now-playing-title">Nenhuma música tocando</div>
+                    <div id="now-playing-artist" class="now-playing-artist">-</div>
+                </div>
+            </div>
+            <div class="player-center">
+                 <!-- The native audio player -->
+                <audio id="player" controls style="display: none;">
+                    <source id="src" src="" type="audio/mpeg">
+                    Seu navegador não suporta a tag de audio.
+                </audio>
+                 <!-- Container for Spotify message/link -->
+                <div id="player-message" class="spotify-message" style="display: none;"></div>
+            </div>
+             <!-- Empty div to balance flex layout if needed -->
+            <div style="flex-basis: 30%;"></div>
+        </div>
+    </div>
+
+    <!-- Vanta.js and Three.js Scripts -->
+    <!-- Add the script files for the effects you plan to use -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.birds.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.rings.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script>
+
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        // Configurações da aplicação
+        const config = {
+            // Removed Last.fm API key
+            // *** Substitua pelos seus próprios Client ID e Client Secret do Spotify ***
+            // *** Obtenha-os em https://developer.spotify.com/dashboard/applications ***
+            // *** ATENÇÃO: EXPOR Client Secret no lado do cliente NÃO é seguro para produção! ***
+            spotifyClientId: '81fe610cb0784b629af48e2ae0b30fdf',
+            spotifyClientSecret: 'b6cbe5ba48584b458bb334242b912bb5',
+
+            // Lista de artistas locais de João Pessoa
+            // Esta lista define OS ARTISTAS que o app reconhece.
+            // Imagens e dados de álbuns/músicas serão buscados via Spotify API usando spotifyId.
+            // 'img' here is purely a *fallback* if Spotify lookup fails to provide an image.
+            localArtists: [
+                {
+                    name: 'Chico Correa & Electronic Band',
+                    img: 'https://i.scdn.co/image/ab6761610000e5eb76f5882eed0437b3cdba82f3', // ID correto
+                    hasLocalFiles: true, // Indicates local audio files exist for this artist
+                    spotifyId: '7wDpWdfVXnLkin6t6VUcSQ' // ID correto
+                },
+                {
+                    name: 'Tapuia',
+                    img: 'https://i.scdn.co/image/ab6761610000e5ebcc99254f1c88859b5e93a154', // Fallback/example img
+                    hasLocalFiles: false,
+                    spotifyId: '1qhYGpcYH5e1Iu8pn4k3Uw' // ID correto
+                },
+                {
+                    name: 'Seu Pereira e Coletivo 401',
+                    img: 'https://i.scdn.co/image/ab6761610000e5eb118f28f11267af1c3d66b971', // Fallback/example img
+                    hasLocalFiles: false,
+                    spotifyId: '5dk0R5am4zMYmG6uyZwfkW' // ID correto
+                },
+                {
+                    name: 'Lily',
+                    img: 'https://i.scdn.co/image/ab67616d0000b273b037f1611f2406d8e61446d6', // Fallback/example img
+                    hasLocalFiles: false,
+                    spotifyId: '7gcqD3P0x9on0Lan3XoRHn' // ID correto
+                },
+                {
+                    name: 'Val Donato',
+                    img: 'https://i.scdn.co/image/ab67616d0000b273f2442c9a8583e8ba87c6bcf8', // ID correto
+                    hasLocalFiles: false,
+                    spotifyId: '4zOnAX9cemPxJ6UGIYhAi3' // ID correto
+                },
+                 // Add more local artists to this list with Spotify IDs if possible
+                 {
+                     name: 'Furmiga Dub',
+                     img: 'https://i.scdn.co/image/ab6761610000e5eb9eeea4fcc304f55117651f7c', // ID correto
+                     hasLocalFiles: false,
+                     spotifyId: '5RfK4k07kFOxYDV0yMfn6x' // ID correto
+                 },
+                 {
+                     name: 'Pedro Faissal & o Meiofree',
+                     img: 'https://i.scdn.co/image/ab6761610000e5ebd9c7022a8a27cb1680020363', // ID correto
+                     hasLocalFiles: false,
+                     spotifyId: '6YoJ1rK7rnFr39ZwYBSrwY' // ID correto
+                 }
+
+                // ... etc. Verify these Spotify IDs are correct!
+            ],
+            // Image default for albums and artists (larger text for better visibility)
+            defaultImage: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48rectIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmcmxsPSIjMjMyMzIzIi8+PHRleHQgeD0iMTUwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJPcGVuIFNhbnMsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjBweCIgZmlsbD0iIzU1NTU1NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+SW1hZ2VtIG5vIGRldGFsaGVzLCBhcnRpc3RhL8O6bGJ1bTwvdGV4dD48L3N2Zz4=',
+             // Image default for mini player cover (smaller text)
+             defaultMiniImage: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHrectIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmllbGw9IiMyMzIzMjMiLz48dGV4dCB4PSIzMCIgeT0iMzAiIGZvbnQtZmFtaWx5PSJPcGVuIFNhbnMsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOHB4IiBmaWxsPSIjNTU1NTU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5DYXBhIE5vYsO1IERpc3BvbsOtdmVsPC90ZXh0Pjwvc3ZnPg=='
+        };
+
+        // Elementos da página
+        const elements = {
+            header: document.getElementById('header'), // Reference the header for Vantajs
+            player: document.getElementById('player'),
+            src: document.getElementById('src'),
+            playlist: document.getElementById('playlist'),
+            albumImage: document.getElementById('album-image'),
+            // Added wrapper refs
+            albumImageWrapper: document.getElementById('album-image-wrapper'),
+            nowPlayingCoverWrapper: document.getElementById('now-playing-cover-wrapper'),
+
+            albumTitle: document.getElementById('album-title'),
+            albumInfo: document.getElementById('album-info'),
+            nowPlayingTitle: document.getElementById('now-playing-title'),
+            nowPlayingArtist: document.getElementById('now-playing-artist'),
+            nowPlayingCover: document.getElementById('now-playing-cover'),
+            searchInput: document.getElementById('search-input'),
+            searchButton: document.getElementById('search-button'),
+            playAll: document.getElementById('play-all'),
+            shuffleAll: document.getElementById('shuffle-all'),
+            featuredArtists: document.getElementById('featured-artists'),
+            playerMessage: document.getElementById('player-message'), // Reference for Spotify message div
+            // References for static carousel buttons
+            prevArtistBtn: document.getElementById('prev-artist-btn'),
+            nextArtistBtn: document.getElementById('next-artist-btn')
+        };
+
+        // Estado da aplicação
+        const state = {
+            currentSong: null,
+            currentSongIndex: -1, // Use -1 when nothing is playing (index in original state.songs array)
+            currentArtist: null,
+            currentAlbum: null,
+            songs: [], // List of songs for the currently displayed album/artist (original order)
+            shuffledSongs: [], // Shuffled list of song OBJECTS (references songs in state.songs)
+            isShuffled: false,
+            isPlaying: false
+        };
+
+        // Spotify Token Management (Client Credentials Flow)
+        const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
+        const SPOTIFY_API_BASE = "https://api.spotify.com/v1";
+        let spotifyToken = null;
+        let spotifyTokenExpiry = 0;
+
+        async function getSpotifyToken() {
+            if (spotifyToken && Date.now() < spotifyTokenExpiry) {
+                return spotifyToken; // Token still valid
+            }
+
+             // Check if client ID and secret are provided
+             if (config.spotifyClientId === 'SEU_SPOTIFY_CLIENT_ID' || config.spotifyClientSecret === 'SEU_SPOTIFY_CLIENT_SECRET') {
+                 console.warn("Spotify Client ID or Secret not configured. Spotify API features will be disabled.");
+                 return null;
+             }
+
+            try {
+                const response = await fetch(SPOTIFY_TOKEN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Basic ' + btoa(config.spotifyClientId + ':' + config.spotifyClientSecret)
+                    },
+                    body: 'grant_type=client_credentials'
+                });
+
+                if (!response.ok) {
+                     const errorData = await response.json();
+                     console.error('Erro ao obter token do Spotify:', response.status, response.statusText, errorData);
+                     // Do NOT return null here if it's a 401 (invalid credentials) - indicate the error clearly
+                     // But for other errors, maybe return null or throw? Let's just return null for simplicity
+                     return null;
+                }
+
+                const data = await response.json();
+                spotifyToken = data.access_token;
+                // Set expiry time slightly before actual expiry
+                spotifyTokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // 1 minute buffer
+                console.log("Spotify token obtained, expires in:", data.expires_in, "seconds.");
+                return spotifyToken;
+            } catch (error) {
+                console.error('Erro na requisição para obter token do Spotify:', error);
+                return null;
+            }
+        }
+
+         // Function to remove placeholder visuals from an image element
+         function removePlaceholder(imgElement) {
+              requestAnimationFrame(() => {
+                   const container = imgElement.parentElement;
+                   // Check if the parent is actually a placeholder wrapper we created
+                   if (container && container.classList.contains('placeholder-img-wrapper')) {
+                       // Remove placeholder styles from the container
+                       container.style.backgroundImage = '';
+                       container.style.backgroundColor = '';
+                       container.classList.remove('placeholder-img-wrapper');
+                        // Remove specific size classes
+                       container.classList.remove('card-img-placeholder', 'album-img-placeholder', 'mini-img-placeholder');
+                       // Remove the text span
+                       container.querySelectorAll('span').forEach(span => span.remove());
+                       // Show the actual image
+                       imgElement.style.opacity = '1';
+                       imgElement.style.visibility = 'visible';
+
+                       // The image element might still have old placeholder classes, remove them
+                        imgElement.classList.remove('placeholder-img', 'card-img-placeholder', 'album-img-placeholder', 'mini-img-placeholder');
+                   } else {
+                        // If not in a wrapper, just remove stray placeholder classes and ensure visibility
+                         imgElement.classList.remove('placeholder-img', 'card-img-placeholder', 'album-img-placeholder', 'mini-img-placeholder');
+                         imgElement.style.opacity = '1';
+                         imgElement.style.visibility = 'visible';
+                   }
+              });
+         }
+
+        // Function to handle image errors and set placeholders
+        // Takes the actual <img> element as input
+        function handleImageError(imgElement, size = 'medium') {
+             // Find the wrapper div or wrap it if necessary
+             let container = imgElement.parentElement;
+             // Identify existing placeholder wrapper by class
+             let isExistingWrapper = container && container.classList.contains('placeholder-img-wrapper');
+
+             // If not already in our wrapper, create one
+             if (!isExistingWrapper) {
+                  container = document.createElement('div');
+                  container.className = 'placeholder-img-wrapper';
+                  // Copy layout-affecting classes from img to wrapper (like card-img-top, now-playing-cover)
+                   // Filter out placeholder classes if they are already there
+                   const classesToCopy = Array.from(imgElement.classList).filter(cls => !cls.includes('placeholder'));
+                   container.classList.add(...classesToCopy);
+                   // Remove these classes from the img itself so wrapper controls layout
+                   imgElement.classList.remove(...classesToCopy);
+
+
+                  imgElement.parentNode.insertBefore(container, imgElement);
+                  container.appendChild(imgElement);
+
+                   // Remove hardcoded width/height from container if copied from img
+                    container.style.width = '';
+                    container.style.height = '';
+
+                  container.style.position = 'relative'; // Needed for absolute positioning of text
+             }
+
+             // Add size-specific placeholder class to the container
+             if (size === 'small') {
+                 container.classList.add('mini-img-placeholder');
+                 container.classList.remove('card-img-placeholder', 'album-img-placeholder');
+             } else if (size === 'large') {
+                 container.classList.add('album-img-placeholder');
+                 container.classList.remove('card-img-placeholder', 'mini-img-placeholder');
+                 
+                 // Se for o album-image, definir tamanhos explicitamente
+                 if (imgElement.id === 'album-image') {
+                     container.style.width = '100%';
+                     container.style.height = '300px';
+                     container.style.borderRadius = '8px 8px 0 0';
+                 }
+             } else { // Default/medium (e.g. card image)
+                 container.classList.add('card-img-placeholder');
+                 container.classList.remove('album-img-placeholder', 'mini-img-placeholder');
+             }
+
+
+             requestAnimationFrame(() => {
+                 imgElement.onerror = null; // Prevent infinite loops on this img element
+
+                 // Determine the correct placeholder text based on the element's alt attribute or size
+                 let placeholderText = imgElement.alt || 'Imagem'; // Default text
+                 if (size === 'small') placeholderText = 'Capa';
+                 if (size === 'large' && imgElement.id === 'album-image') placeholderText = imgElement.alt || 'Capa do Álbum';
+                 if (size === 'large' && imgElement.id !== 'album-image') placeholderText = imgElement.alt || 'Imagem do Artista';
+
+                 let placeholderSrc = size === 'small' ? config.defaultMiniImage : config.defaultImage;
+
+                 // Remove any existing text spans and add the new one to the container
+                 container.querySelectorAll('span').forEach(span => span.remove());
+                 const textSpan = document.createElement('span');
+                 textSpan.textContent = placeholderText;
+                 container.appendChild(textSpan);
+
+                 // Set the placeholder background image (using the SVG URL) and class on the container
+                 container.style.backgroundImage = `url("${placeholderSrc}")`;
+                 container.style.backgroundSize = 'cover';
+                 container.style.backgroundPosition = 'center';
+                 container.style.backgroundColor = '#232323'; // Ensure dark background
+                 container.classList.add('placeholder-img-wrapper'); // Ensure wrapper class is present
+
+                 // Hide the actual img element
+                 imgElement.style.opacity = '0';
+                 imgElement.style.visibility = 'hidden';
+             });
+        }
+
+
+        // Set initial placeholder visuals and error handlers for key images immediately
+        function setupInitialPlaceholders() {
+             // Album Cover - target the image, handler will wrap it or add styles
+             handleImageError(elements.albumImage, 'large');
+              // Now Playing Cover - target the image, handler will wrap it or add styles
+             handleImageError(elements.nowPlayingCover, 'small');
+
+             // Featured Artist Cards are handled dynamically in loadFeaturedArtists
+        }
+
+
+        // Function to normalizar texto (remover acentos e converter para lowercase)
+        function normalizeText(text) {
+            if (!text) return '';
+            return text.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        // Function to embaralhar as músicas
+        function shuffleSongs() {
+            state.shuffledSongs = [...state.songs]; // Start with a fresh copy of original songs (objects)
+            for (let i = state.shuffledSongs.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [state.shuffledSongs[i], state.shuffledSongs[j]] = [state.shuffledSongs[j], state.shuffledSongs[i]];
+            }
+        }
+
+        // Function to render the playlist
+        function renderPlaylist() {
+            elements.playlist.innerHTML = '';
+            const songList = state.isShuffled ? state.shuffledSongs : state.songs; // The list currently being displayed/used for playback
+
+            if (songList.length === 0) {
+                 let message = '<tr><td colspan="3" class="text-center no-tracks-message">';
+                 if (state.currentArtist) {
+                     message += `Nenhuma música encontrada para ${state.currentArtist}.`;
+                 } else {
+                     message += 'Selecione um artista para ver as músicas';
+                 }
+                 message += '</td></tr>';
+                 elements.playlist.innerHTML = message;
+
+                 // Disable play/shuffle buttons if no songs
+                 elements.playAll.disabled = true;
+                 elements.shuffleAll.disabled = true;
+
+                 return;
+            }
+
+             // Check if there are any local playable songs to decide button state
+             const hasAnyLocalPlayableSong = state.songs.some(song => song.filePath); // Check original list for playAll/shuffleAll
+
+             // Enable/disable buttons based on local playability availability in the loaded list
+             elements.playAll.disabled = !hasAnyLocalPlayableSong;
+             elements.shuffleAll.disabled = !hasAnyLocalPlayableSong;
+
+
+            // Add message row explaining playback source
+            const messageRow = document.createElement('tr');
+            messageRow.className = 'info-message-row'; // Use a generic info class
+             let messageContent = '';
+
+             if (hasAnyLocalPlayableSong) {
+                 messageContent = 'Músicas locais com <i class="fas fa-play-circle"></i> podem ser reproduzidas aqui. Outras abrem no Spotify.';
+             } else {
+                 messageContent = 'Nenhuma música desta lista está disponível para reprodução local. Clique nos títulos para abrir no Spotify.';
+             }
+
+            messageRow.innerHTML = `
+                <td colspan="3">
+                    <div class="spotify-message"> <!-- Still use spotify-message class for styling consistency -->
+                         <p>${messageContent}</p>
+                    </div>
+                </td>
+            `;
+            elements.playlist.appendChild(messageRow);
+
+
+            songList.forEach(function(song, index) {
+                const row = document.createElement('tr');
+                row.className = 'song'; // Add song class for styling
+
+                // Use data attributes to store song info and index (index refers to the current list: shuffled or not)
+                row.dataset.songId = song.id; // Use the unique song ID
+                // Find the index in the *original* list to pass to playSong if needed
+                const originalIndex = state.songs.findIndex(s => s.id === song.id);
+                row.dataset.originalIndex = originalIndex; // Store original index
+                row.dataset.listIndex = index; // Index within the currently displayed list (shuffled or not)
+
+
+                let titleCellContent = '';
+                let isClickableRowForPlayback = false; // Is the *entire row* clickable for playback?
+
+                if (song.filePath) {
+                    // Local file available, make the *row* clickable for local playback
+                    titleCellContent = `<i class="fas fa-play-circle play-icon"></i> ${song.title}`;
+                    isClickableRowForPlayback = true;
+                    row.classList.add('local-playable'); // Add class for specific row styling
+                } else if (song.external_url) {
+                    // No local file, but has Spotify URL - make the *title* a link
+                    titleCellContent = `<a href="${song.external_url}" target="_blank" class="text-light text-decoration-none"><i class="fab fa-spotify mr-2"></i> ${song.title}</a>`;
+                    // Row is not clickable for playback, only the link inside
+                    isClickableRowForPlayback = false;
+                    row.classList.remove('local-playable'); // Ensure class is not present
+                    row.style.cursor = 'default'; // Ensure default cursor for non-playable row
+                } else {
+                     // No local file and no Spotify URL (fallback/missing data)
+                     titleCellContent = `<i class="fas fa-info-circle mr-2"></i> ${song.title} <small class="text-muted">(Fonte indisponível)</small>`;
+                     isClickableRowForPlayback = false;
+                     row.classList.remove('local-playable'); // Ensure class is not present
+                     row.style.cursor = 'default'; // Ensure default cursor for non-playable row
+                }
+
+                row.innerHTML = `
+                    <th scope="row">${index + 1}</th>
+                    <td>${titleCellContent}</td>
+                    <td>${formatDuration(song.duration)}</td>
+                `;
+
+                // Add click event listener ONLY if the row is intended for local playback
+                if (isClickableRowForPlayback) {
+                    // Use the index from the *currently displayed list* for the click event
+                    // But call playSong with the song object and its *original* index
+                    row.addEventListener('click', () => {
+                         // Find the song object in the current list again based on the clicked row's index
+                         const clickedListIndex = parseInt(row.dataset.listIndex);
+                         const clickedSong = songList[clickedListIndex];
+                         // Find the original index of this song
+                         const clickedOriginalIndex = state.songs.findIndex(s => s.id === clickedSong.id);
+                         playSong(clickedSong, clickedOriginalIndex);
+                    });
+                }
+                 // Note: Clicks on the `<a>` tag for Spotify links are handled by the browser default behavior.
+
+
+                elements.playlist.appendChild(row);
+            });
+
+             // Update playing state to highlight the correct row if a song is playing
+             updatePlayingState();
+        }
+
+        // Function to format the duration of the music
+        function formatDuration(duration) {
+            // Last.fm duration can sometimes be 0 or null
+            if (typeof duration !== 'number' || isNaN(duration) || duration <= 0) return "0:00";
+            const minutes = Math.floor(duration / 60);
+            const seconds = Math.round(duration % 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Function to play a song (This function ONLY handles local playback)
+        function playSong(song, originalIndex) {
+             // This function should *only* be called for songs with `filePath`
+             if (!song || !song.filePath) {
+                 console.error("Attempted to play a song without a local file path using playSong:", song);
+                 // If somehow called incorrectly, treat as unplayable
+                 displayUnplayableMessage(song);
+                 return;
+             }
+
+            state.currentSongIndex = originalIndex; // Update index (referencing original list)
+            const isSameSong = state.currentSong && state.currentSong.id === song.id;
+
+            // Hide the player message and show the native player
+            elements.playerMessage.style.display = 'none';
+            elements.player.style.display = 'block';
+
+            // Handle resume/pause if it's the same song
+            if (isSameSong && elements.player.src === (window.location.origin + song.filePath)) { // Also check src matches
+                if (elements.player.paused) {
+                     elements.player.play()
+                        .then(() => {
+                            state.isPlaying = true;
+                            updatePlayingState(); // Update highlighting
+                            console.log("Resumed playback:", song.title);
+                        })
+                        .catch(error => {
+                            console.error('Erro ao retomar a música local:', error);
+                             displayUnplayableMessage(song, 'Erro ao reproduzir arquivo local.');
+                             state.isPlaying = false;
+                             updatePlayingState();
+                        });
+                } else {
+                    elements.player.pause();
+                    state.isPlaying = false;
+                    updatePlayingState();
+                    console.log("Paused playback:", song.title);
+                }
+                return; // Exit function, action handled
+            }
+
+            // It's a new local song, load and play
+            elements.src.src = song.filePath;
+            elements.player.load(); // Load the new source
+
+            elements.player.play()
+                .then(() => {
+                    state.isPlaying = true;
+                    state.currentSong = song; // Update current song state
+                    // Update now playing info
+                    elements.nowPlayingTitle.textContent = song.title;
+                    elements.nowPlayingArtist.textContent = song.artist;
+                    elements.nowPlayingCover.src = song.albumArt || config.defaultMiniImage;
+                    removePlaceholder(elements.nowPlayingCover); // Remove placeholder
+                    elements.nowPlayingCover.onerror = function() { handleImageError(this, 'small'); }; // Ensure handler is reset
+
+                    updatePlayingState(); // Update table row highlighting
+                    console.log("Now playing:", song.title, "from local file.");
+                })
+                .catch(error => {
+                    console.error(`Erro ao tocar o arquivo local: ${song.filePath}`, error);
+                    displayUnplayableMessage(song, 'Erro ao reproduzir arquivo local. Verifique se o arquivo existe.');
+                     state.isPlaying = false; // Update state if playback fails
+                     updatePlayingState(); // Update highlighting (remove playing state)
+                });
+        }
+
+        // Function to display message for unplayable songs (those without filePath)
+        function displayUnplayableMessage(song, customMessage = 'Esta música não está disponível para reprodução local.') {
+             // Pause and hide native player
+             elements.player.pause();
+             elements.player.style.display = 'none';
+             state.isPlaying = false; // Not playing locally
+
+             // Update current song state to the song whose info is being displayed
+             // Use the song object passed in, which comes from the current list (shuffled or not)
+             state.currentSong = song;
+              // The index doesn't matter for unplayable songs, set to -1
+             state.currentSongIndex = -1;
+
+
+             updatePlayingState(); // Update table row highlighting (remove playing state)
+
+             // Update now playing info bar
+             elements.nowPlayingTitle.textContent = song.title || 'Música Indisponível';
+             elements.nowPlayingArtist.textContent = song.artist || '-';
+
+             elements.nowPlayingCover.src = song.albumArt || config.defaultMiniImage;
+             removePlaceholder(elements.nowPlayingCover); // Try removing placeholder first
+             elements.nowPlayingCover.onerror = function() { handleImageError(this, 'small'); }; // Ensure handler is reset
+
+
+             // Construct the Spotify search query or use the external_url
+             const spotifyLink = song.external_url || (song.title && song.artist ? `https://open.spotify.com/search/${encodeURIComponent(`${song.title} artist:${song.artist}`)}` : '#');
+
+             // Show message with Spotify link
+             elements.playerMessage.innerHTML = `
+                 <div class="spotify-message">
+                     <p>${song.title || 'Música'}</p>
+                     <p>${customMessage}</p>
+                     ${spotifyLink !== '#' ? `
+                        <a href="${spotifyLink}" target="_blank" class="btn btn-success btn-sm">
+                            <i class="fab fa-spotify mr-1"></i> Ouvir no Spotify
+                        </a>
+                     ` : ''}
+                 </div>
+             `;
+             elements.playerMessage.style.display = 'block';
+             console.log("Showing unplayable message for:", song.title);
+        }
+
+
+        // Update the visual state of the playlist (highlighting the playing song)
+        function updatePlayingState() {
+            const songList = state.isShuffled ? state.shuffledSongs : state.songs; // The list currently displayed
+
+            // Remove 'playing' class from all rows first
+             elements.playlist.querySelectorAll('tr.song').forEach(row => {
+                 row.classList.remove('playing');
+             });
+
+            // If a song is currently playing AND it's a local file...
+            // Use state.currentSong (which is the song object itself)
+            if (state.isPlaying && state.currentSong && state.currentSong.filePath) {
+                 // Find the row corresponding to the current song in the *currently displayed list*
+                 const currentSongIndexInCurrentList = songList.findIndex(s => s.id === state.currentSong.id);
+
+                 if (currentSongIndexInCurrentList !== -1) {
+                     // Select the row based on its data-list-index
+                     const rowToHighlight = elements.playlist.querySelector(`tr.song[data-list-index="${currentSongIndexInCurrentList}"]`);
+                     if (rowToHighlight) {
+                          rowToHighlight.classList.add('playing');
+                     }
+                 }
+            }
+             // No highlighting is done for non-local tracks, even if their info is shown in the player bar
+        }
+
+        // Event listener for the native audio player
+        elements.player.addEventListener('play', () => {
+             state.isPlaying = true;
+             updatePlayingState(); // Update highlighting
+             // console.log("Player playing");
+        });
+
+        elements.player.addEventListener('pause', () => {
+             state.isPlaying = false;
+             updatePlayingState(); // Update highlighting
+             // console.log("Player paused");
+        });
+
+        elements.player.addEventListener('ended', function() {
+             console.log("Player ended. Moving to next song in the current list.");
+            const songList = state.isShuffled ? state.shuffledSongs : state.songs; // Get the current list
+            if (songList.length > 0 && state.currentSong) {
+                // Find the index of the ended song in the *current list* (shuffled or not)
+                const currentSongIndexInCurrentList = songList.findIndex(s => s.id === state.currentSong.id);
+
+                if (currentSongIndexInCurrentList === -1) {
+                     console.error("Ended song not found in current playlist! Resetting player.");
+                     resetPlayerState();
+                     return;
+                }
+
+                const nextIndexInCurrentList = (currentSongIndexInCurrentList + 1) % songList.length;
+                const nextSong = songList[nextIndexInCurrentList];
+
+                 // Check if the next song has a local file path
+                if (nextSong.filePath) {
+                     // Find the index of the next song in the original `state.songs` list for playSong
+                     const nextSongOriginalIndex = state.songs.findIndex(s => s.id === nextSong.id);
+                    playSong(nextSong, nextSongOriginalIndex); // Play the next local song
+                } else {
+                    // If the next song is not local, stop playback and show message/link
+                    displayUnplayableMessage(nextSong, 'A próxima música não está disponível para reprodução local.');
+                    // Update the current song state to the next song info
+                    state.currentSong = nextSong; // Set current song to the one we're showing info for
+                    state.currentSongIndex = -1; // Indicate no local song playing
+                    state.isPlaying = false; // Ensure state is not playing
+                    updatePlayingState(); // Update highlighting (should remove playing state)
+                }
+            } else {
+                // If playlist is empty or current song is null, reset player state
+                resetPlayerState();
+            }
+        });
+
+         // Helper function to reset player state visuals and state
+         function resetPlayerState() {
+              state.isPlaying = false;
+              state.currentSong = null;
+              state.currentSongIndex = -1; // Index -1 means no local song is currently tracked for playback
+
+              elements.nowPlayingTitle.textContent = 'Nenhuma música tocando';
+              elements.nowPlayingArtist.textContent = '-';
+
+              // Ensure placeholder is visible for now playing cover
+              elements.nowPlayingCover.src = config.defaultMiniImage; // Set initial source
+              handleImageError(elements.nowPlayingCover, 'small'); // Apply placeholder style
+
+
+              elements.player.pause();
+              elements.player.style.display = 'none'; // Hide native player
+              elements.playerMessage.style.display = 'none'; // Hide message
+
+              updatePlayingState(); // Clear highlighting
+               // Also disable play/shuffle buttons (will be re-enabled if local tracks are loaded)
+               elements.playAll.disabled = true;
+               elements.shuffleAll.disabled = true;
+              console.log("Player state reset.");
+         }
+
+
+        // Load specific local album data for Chico Correa
+        function loadChicoCorreaAlbum() {
+            const artistName = "Chico Correa & Electronic Band";
+            const albumName = "Foot Electronic EP";
+
+            state.currentArtist = artistName;
+            state.currentAlbum = albumName;
+
+            // Specific track data with hardcoded file paths relative to index.html
+            const tracks = [
+                { id: 'foot018-1', title: "Eu Pisei na Pedra", duration: 233, filePath: "chicocorrea/foot018/foot018_01-chico_correa_electronic_band-eu_pisei_na_pedra.mp3" },
+                { id: 'foot018-2', title: "Cantador", duration: 212, filePath: "chicocorrea/foot018/foot018_02-chico_correa_electronic_band-cantador.mp3" },
+                { id: 'foot018-3', title: "Manganga", duration: 188, filePath: "chicocorrea/foot018/foot018_03-chico_correa_electronic_band-manganga.mp3" },
+                { id: 'foot018-4', title: "Bossinha", duration: 268, filePath: "chicocorrea/foot018/foot018_04-chico_correa_electronic_band-bossinha.mp3" },
+                { id: 'foot018-5', title: "Coco de Elevador", duration: 197, filePath: "chicocorrea/foot018/foot018_05-chico_correa_electronic_band-coco_de_elevador.mp3" },
+                { id: 'foot018-6', title: "Terra", duration: 245, filePath: "chicocorrea/foot018/foot018_06-chico_correa_electronic_band-terra.mp3" },
+                { id: 'foot018-7', title: "Baião Lo-Fi", duration: 217, filePath: "chicocorrea/foot018/foot018_07-chico_correa_electronic_band-baiao_lo-fi.mp3" },
+                // Novas músicas
+                { id: 'foot018-8', title: "Lele", duration: 247, filePath: "chicocorrea/foot018/foot018_08-chico_correa_electronic_band-lele.mp3" },
+                { id: 'foot018-9', title: "Odete Remix 2006", duration: 298, filePath: "chicocorrea/foot018/foot018_09-chico_correa_electronic_band-odete_remix_2006.mp3" },
+                { id: 'foot018-10', title: "Baile Muderno", duration: 192, filePath: "chicocorrea/foot018/foot018_10-chico_correa_electronic_band-baile_muderno.mp3" },
+                { id: 'foot018-11', title: "Descanso de Tela", duration: 147, filePath: "chicocorrea/foot018/foot018_11-chico_correa_electronic_band-descanso_de_tela.mp3" },
+                { id: 'foot018-12', title: "Cantador (Armando Antonio Remix)", duration: 323, filePath: "chicocorrea/foot018/foot018_12-chico_correa_electronic_band-cantador_armando_antonio_remix.mp3" },
+                { id: 'foot018-13', title: "Bossinha (Aquilez Remix)", duration: 416, filePath: "chicocorrea/foot018/foot018_13-chico_correa_electronic_band-bossinha_aquilez_remix.mp3" }
+         ];
+
+             // Clear previous state and populate with local tracks
+            state.songs = [];
+            state.shuffledSongs = []; // Ensure shuffled list is also cleared
+
+            tracks.forEach((track) => {
+                state.songs.push({
+                    id: track.id, // Use predefined ID
+                    title: track.title,
+                    artist: state.currentArtist,
+                    album: albumName,
+                    albumArt: "chicocorrea/chicocorrea.jpg", // Use local image path for album art
+                    filePath: track.filePath, // Direct path (indicates local playability)
+                    duration: track.duration
+                });
+            });
+
+            // Update album info UI
+            elements.albumImage.src = "chicocorrea/chicocorrea.jpg";
+            removePlaceholder(elements.albumImage); // Remove placeholder
+            elements.albumImage.onerror = function() { handleImageError(this, 'large'); }; // Ensure error handler is reset
+
+            elements.albumTitle.textContent = albumName;
+            elements.albumInfo.textContent = `${state.currentArtist} • 2019 • ${state.songs.length} Músicas`;
+
+
+            // Prepare for shuffle and render
+            state.shuffledSongs = [...state.songs];
+            shuffleSongs(); // Initial shuffle
+            renderPlaylist(); // Render the non-shuffled list initially
+
+             // Reset player state when loading a new album
+             resetPlayerState();
+             // Enable buttons since local tracks are available
+             elements.playAll.disabled = false;
+             elements.shuffleAll.disabled = false;
+
+        }
+
+        // Função corrigida para obter detalhes de artistas do Spotify
+        async function getSpotifyArtistDetails(artistSpotifyId) {
+            const token = await getSpotifyToken();
+            if (!token) return null;
+
+            try {
+                console.log(`Fetching artist details for ID: ${artistSpotifyId}`);
+                const response = await fetch(
+                    `${SPOTIFY_API_BASE}/artists/${artistSpotifyId}`,
+                    { headers: { 'Authorization': 'Bearer ' + token } }
+                );
+                
+                if (!response.ok) {
+                    console.warn('Spotify Artist Details fetch failed:', response.status, response.statusText);
+                    return null;
+                }
+                
+                const data = await response.json();
+                console.log("Spotify Artist Details:", data);
+                return data;
+            } catch (error) {
+                console.error('Error fetching Spotify Artist Details:', error);
+                return null;
+            }
+        }
+
+
+// Modificar a função getSpotifyArtistAlbums para limitar a quantidade de dados
+async function getSpotifyArtistAlbums(artistSpotifyId) {
+    const token = await getSpotifyToken();
+    if (!token) return null;
+
+    try {
+        // Primeiro buscar álbuns
+        const albumsResponse = await fetch(
+            `${SPOTIFY_API_BASE}/artists/${artistSpotifyId}/albums?include_groups=album&limit=20&market=BR`,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+        
+        if (!albumsResponse.ok) {
+            console.warn('Spotify Artist Albums fetch failed:', albumsResponse.status);
+            return null;
+        }
+        
+        const albumsData = await albumsResponse.json();
+        const albums = albumsData.items || [];
+        
+        // Depois buscar singles e compilações
+        const singlesResponse = await fetch(
+            `${SPOTIFY_API_BASE}/artists/${artistSpotifyId}/albums?include_groups=single,compilation&limit=20&market=BR`,
+            { headers: { 'Authorization': 'Bearer ' + token } }
+        );
+        
+        let singles = [];
+        if (singlesResponse.ok) {
+            const singlesData = await singlesResponse.json();
+            singles = singlesData.items || [];
+        }
+        
+        // Combinar os resultados
+        return [...albums, ...singles];
+    } catch (error) {
+        console.error('Erro ao buscar álbuns no Spotify:', error);
+        return null;
+    }
+}
+
+        // Function to get tracks for a specific album from Spotify
+        async function getSpotifyAlbumTracks(albumId) {
+            const token = await getSpotifyToken();
+            if (!token) return null; // Cannot proceed without token
+
+            try {
+                const response = await fetch(
+                    `${SPOTIFY_API_BASE}/albums/${albumId}?market=BR`, // Added market
+                    { headers: { 'Authorization': 'Bearer ' + token } }
+                );
+
+                if (!response.ok) {
+                     console.warn("Error fetching Spotify album tracks:", response.status, response.statusText);
+                     // Don't throw, return null
+                     return null;
+                }
+                const data = await response.json();
+                 console.log("Spotify Album Info & Tracks:", data);
+                 return data; // Returns the full album object
+            } catch (error) {
+                console.error('Erro na requisição para buscar faixas do álbum no Spotify:', error);
+                return null;
+            }
+        }
+
+
+// Função modificada para exibir todos os álbuns de um artista
+// Modificar a função loadArtistAlbums para usar as imagens dos álbuns corretamente
+async function loadArtistAlbums(artistName) {
+    console.log(`Loading content for artist: ${artistName}`);
+    state.currentArtist = artistName;
+    state.currentAlbum = null; // Reset album
+    state.songs = []; // Clear previous songs
+    state.shuffledSongs = []; // Ensure shuffled list is also cleared
+
+    // Show loading state
+    elements.albumTitle.textContent = `Carregando ${artistName}...`;
+    elements.albumInfo.textContent = '';
+    elements.albumImage.src = config.defaultImage;
+    handleImageError(elements.albumImage, 'large');
+
+    elements.playlist.innerHTML = '<tr><td colspan="3" class="text-center no-tracks-message">Carregando músicas...</td></tr>';
+
+    // Hide player message and pause/hide player
+    resetPlayerState();
+
+    // Find the artist in our local list
+    const artistData = config.localArtists.find(a => a.name === artistName);
+
+    // If it's Chico Correa AND we have local files configured, load the specific local album
+    if (artistData && artistData.hasLocalFiles) {
+        console.log(`Artist ${artistName} has local files. Loading local album.`);
+        loadChicoCorreaAlbum();
+        return; // Stop here, local album loaded
+    }
+
+    // For other artists (or Chico Correa if hasLocalFiles is false), try Spotify
+    console.log(`Artist ${artistName} does not have local files. Trying Spotify.`);
+    const token = await getSpotifyToken();
+
+    if (!artistData || !artistData.spotifyId || !token) {
+        console.warn(`Cannot load ${artistName} from Spotify.`);
+        displayDataUnavailableState(artistName, artistData?.img, "Não foi possível carregar informações e músicas deste artista do Spotify.");
+        return;
+    }
+
+    // Attempt to get artist's albums from Spotify using their Spotify ID
+    const spotifyAlbums = await getSpotifyArtistAlbums(artistData.spotifyId);
+
+    if (spotifyAlbums && spotifyAlbums.length > 0) {
+        console.log(`Found ${spotifyAlbums.length} albums on Spotify for ${artistName}.`);
+        
+        // Agrupar por tipo (álbum, single, etc.)
+        const albumsByType = {
+            album: [],
+            single: [],
+            compilation: [],
+            appears_on: []
+        };
+        
+        // Classificar os álbuns por tipo
+        spotifyAlbums.forEach(album => {
+            if (albumsByType.hasOwnProperty(album.album_group)) {
+                albumsByType[album.album_group].push(album);
+            } else {
+                albumsByType.album.push(album); // Fallback para tipo 'album'
+            }
+        });
+        
+        // Usar a imagem do primeiro álbum em vez da imagem do artista para mostrar a capa do álbum
+        let albumImageUrl = artistData.img;
+        
+        // Procurar primeiro por álbum com imagem, depois por single com imagem
+        const albumWithImage = spotifyAlbums.find(album => album.images && album.images.length > 0);
+        if (albumWithImage && albumWithImage.images && albumWithImage.images.length > 0) {
+            albumImageUrl = albumWithImage.images[0].url;
+            console.log(`Using album cover image from "${albumWithImage.name}"`);
+        } else {
+            console.warn(`No album with image found for artist ${artistName}, using artist image instead.`);
+        }
+        
+        // Atualizar imagem do álbum
+        elements.albumImage.src = albumImageUrl;
+        removePlaceholder(elements.albumImage);
+        elements.albumImage.onerror = function() { 
+            console.error(`Failed to load album image from ${albumImageUrl}, applying placeholder`);
+            handleImageError(this, 'large'); 
+        };
+        
+        // Atualizar título e informações
+        elements.albumTitle.textContent = artistName;
+        
+        // Contar o número total de álbuns/singles
+        const totalReleases = spotifyAlbums.length;
+        elements.albumInfo.textContent = `Artista com ${totalReleases} lançamentos no Spotify`;
+        
+        // Limpar a playlist anterior
+        elements.playlist.innerHTML = '';
+        
+        // Informação sobre como ouvir
+        const messageRow = document.createElement('tr');
+        messageRow.className = 'info-message-row';
+        messageRow.innerHTML = `<td colspan="3" class="text-center">
+            Clique nos títulos para ouvir no Spotify
+        </td>`;
+        elements.playlist.appendChild(messageRow);
+        
+        // Função auxiliar para adicionar álbuns de um tipo específico
+        function addAlbumsOfType(type, label) {
+            if (albumsByType[type]?.length > 0) {
+                // Adicionar cabeçalho para este tipo
+                const typeHeaderRow = document.createElement('tr');
+                typeHeaderRow.className = 'album-type-header';
+                typeHeaderRow.innerHTML = `<td colspan="3"><h5>${label}</h5></td>`;
+                elements.playlist.appendChild(typeHeaderRow);
+                
+                // Adicionar cada álbum deste tipo
+                albumsByType[type].forEach(album => {
+                    const row = document.createElement('tr');
+                    row.className = 'album-row';
+                    
+                    const spotifyLink = album.external_urls?.spotify || '#';
+                    
+                    // Incluir imagem do álbum se disponível
+                    const albumImg = album.images && album.images.length > 0 
+                        ? `<img src="${album.images[0].url}" alt="${album.name}" style="width: 40px; height: 40px; margin-right: 10px; border-radius: 4px;">`
+                        : '';
+                    
+                    row.innerHTML = `
+                        <td colspan="2">
+                            <a href="${spotifyLink}" target="_blank" class="spotify-album-link">
+                                ${albumImg}
+                                <i class="fab fa-spotify"></i> ${album.name} (${new Date(album.release_date).getFullYear()})
+                            </a>
+                        </td>
+                        <td>${album.total_tracks} faixas</td>
+                    `;
+                    
+                    elements.playlist.appendChild(row);
+                });
+            }
+        }
+        
+        // Adicionar os diferentes tipos de álbuns na ordem desejada
+        addAlbumsOfType('album', 'Álbuns');
+        addAlbumsOfType('single', 'Singles');
+        addAlbumsOfType('compilation', 'Coletâneas');
+        addAlbumsOfType('appears_on', 'Participações');
+        
+        // Desabilitar botões de reprodução (não temos arquivos locais)
+        elements.playAll.disabled = true;
+        elements.shuffleAll.disabled = true;
+    } else {
+        // Spotify artist albums failed to load (or no albums found)
+        console.warn(`Could not find albums for artist "${artistName}" on Spotify.`);
+        displayDataUnavailableState(artistName, artistData?.img, `Não foi possível encontrar álbuns para "${artistName}" no Spotify.`);
+    }
+}
+
+         // Helper to display state when data is unavailable from Spotify/Local
+         function displayDataUnavailableState(artistName, artistImageUrl = config.defaultImage, message = 'Não foi possível carregar dados para este artista.') {
+             console.error("Displaying data unavailable state:", message);
+
+             state.currentArtist = artistName; // Keep artist name in state
+             state.currentAlbum = null;
+             state.songs = []; // Clear songs
+             state.shuffledSongs = []; // Clear shuffled songs
+
+              // Update album info UI
+              elements.albumTitle.textContent = artistName;
+              elements.albumInfo.textContent = message; // Display the specific message
+
+              // Use artist image or default placeholder
+              elements.albumImage.src = artistImageUrl || config.defaultImage;
+              removePlaceholder(elements.albumImage); // Try removing placeholder first
+              elements.albumImage.onerror = function() { handleImageError(this, 'large'); }; // Ensure handler is reset
+
+
+              elements.playlist.innerHTML = `<tr><td colspan="3" class="text-center no-tracks-message">${message}</td></tr>`;
+
+             // Disable play/shuffle buttons
+             elements.playAll.disabled = true;
+             elements.shuffleAll.disabled = true;
+
+              // Reset player info
+              resetPlayerState(); // This also updates now playing cover placeholder
+         }
+
+
+        // Function to perform search, restricted to local artists
+        async function performSearch() {
+            const query = elements.searchInput.value.trim();
+            if (query.length < 2) {
+                 alert('Por favor, digite pelo menos 2 caracteres para buscar.');
+                 return;
+            }
+
+            // Show loading state for the album view during search
+             elements.albumTitle.textContent = `Buscando por "${query}"...`;
+             elements.albumInfo.textContent = '';
+             // Set placeholder image immediately
+             elements.albumImage.src = config.defaultImage; // Set initial source
+             handleImageError(elements.albumImage, 'large'); // Apply placeholder style
+
+             elements.playlist.innerHTML = '<tr><td colspan="3" class="text-center no-tracks-message">Buscando...</td></tr>';
+             elements.playAll.disabled = true;
+             elements.shuffleAll.disabled = true;
+             resetPlayerState(); // Clear player state
+
+
+            const normalizedQuery = normalizeText(query);
+
+            // Find the local artist who matches the query best by name
+            const targetArtist = config.localArtists.find(artist =>
+                normalizeText(artist.name) === normalizedQuery || normalizeText(artist.name).includes(normalizedQuery)
+            );
+
+             if (targetArtist) {
+                  console.log(`Search query matches local artist by name: ${targetArtist.name}. Loading artist content.`);
+                  // Load content for the found artist (handles local vs Spotify internally)
+                  loadArtistAlbums(targetArtist.name);
+             } else {
+                  console.log(`Search query "${query}" does not match any known local artist.`);
+                  // Display a message indicating no local artist found for the query
+                  displayDataUnavailableState(query, null, `Nenhum artista local encontrado para sua busca: "${query}".`);
+             }
+        }
+
+
+        // Tratamento de pesquisa
+        elements.searchButton?.addEventListener('click', performSearch);
+
+        // Permitir busca com Enter
+        elements.searchInput?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent default form submission
+                performSearch();
+            }
+        });
+
+        // Botão de tocar todas as músicas
+        elements.playAll.addEventListener('click', function() {
+            console.log("Play All clicked");
+            if (state.songs.length === 0) {
+                 console.warn("Attempted to play all, but no songs available.");
+                 return; // Do nothing if no songs
+            }
+
+             // Find the first song in the *original list* that has a local file path
+            const songListToPlay = state.songs; // Use the original list for 'Play' button
+            const firstLocalPlayableSong = songListToPlay.find(song => song.filePath);
+
+             if (firstLocalPlayableSong) {
+                 state.isShuffled = false; // Ensure not shuffled
+                 renderPlaylist(); // Re-render to show non-shuffled order
+
+                 const firstLocalPlayableOriginalIndex = state.songs.indexOf(firstLocalPlayableSong);
+                 playSong(firstLocalPlayableSong, firstLocalPlayableOriginalIndex); // Play the first local playable song
+             } else {
+                 // If no local files exist in this list, this button should be disabled, but just in case...
+                 console.warn("Attempted to play all, but no local playable songs found.");
+                 if (state.songs.length > 0) {
+                     // Display message for the first song info, even though it's not playable
+                     displayUnplayableMessage(state.songs[0], `Nenhuma música local disponível nesta lista. Clique nos títulos para ouvir no Spotify.`);
+                      // Update current song state to the first song info, even if unplayable
+                      state.currentSong = state.songs[0]; // Set current song to the one whose info is shown
+                      state.currentSongIndex = -1; // Indicate no local song playing
+                      state.isPlaying = false; // Ensure state is not playing
+                      updatePlayingState(); // Update row highlighting (clears 'playing')
+                 }
+             }
+        });
+
+        // Botão de tocar aleatoriamente
+        elements.shuffleAll.addEventListener('click', function() {
+             console.log("Shuffle All clicked");
+             if (state.songs.length === 0) {
+                  console.warn("Attempted to shuffle and play, but no songs available.");
+                  return; // Do nothing if no songs
+             }
+
+             // Find if ANY song in the original list is local playable
+             const hasAnyLocalPlayableSong = state.songs.some(song => song.filePath);
+
+             if (!hasAnyLocalPlayableSong) {
+                  // If no local songs at all, shuffle doesn't make sense for playback
+                  console.warn("Attempted to shuffle and play, but no local playable songs found in the entire list.");
+                   if (state.songs.length > 0) {
+                        displayUnplayableMessage(state.songs[0], `Nenhuma música local disponível nesta lista. Clique nos títulos para ouvir no Spotify.`);
+                        state.currentSong = state.songs[0];
+                        state.currentSongIndex = -1;
+                        state.isPlaying = false;
+                        updatePlayingState();
+                   }
+                  return; // Stop here
+             }
+
+
+            state.isShuffled = true;
+            shuffleSongs(); // Shuffle the songs (populates state.shuffledSongs)
+            renderPlaylist(); // Re-render to show shuffled order
+
+            // Find the first song in the *shuffled list* that has a local file path
+            const songListToPlay = state.shuffledSongs;
+            const firstLocalPlayableSong = songListToPlay.find(song => song.filePath);
+
+             if (firstLocalPlayableSong) {
+                 // Find its index in the original list to pass to playSong
+                 const firstLocalPlayableOriginalIndex = state.songs.findIndex(s => s.id === firstLocalPlayableSong.id);
+
+                 playSong(firstLocalPlayableSong, firstLocalPlayableOriginalIndex); // Play the first local playable song from shuffled list
+             } else {
+                  // This case should ideally not happen if hasAnyLocalPlayableSong was true,
+                  // but handle it as a safeguard (e.g., shuffled list ended up empty of local tracks?)
+                  console.warn("Attempted to shuffle and play, but found no local playable songs in the shuffled list.");
+                  if (state.shuffledSongs.length > 0) {
+                       displayUnplayableMessage(state.shuffledSongs[0], `Nenhuma música local disponível nesta lista. Clique nos títulos para ouvir no Spotify.`);
+                       state.currentSong = state.shuffledSongs[0];
+                       state.currentSongIndex = -1;
+                       state.isPlaying = false;
+                       updatePlayingState();
+                  }
+             }
+        });
+
+
+        // Load featured artists into the slider
+        async function loadFeaturedArtists() {
+            const container = elements.featuredArtists;
+            container.innerHTML = ''; // Clear any previous content (including loading spinner)
+
+            // Use the predefined list of local artists from config
+            // Filter to only include artists with a name and a Spotify ID or a fallback image
+            const artistsToShow = config.localArtists.filter(artist => artist.name && (artist.spotifyId || artist.img));
+
+            if (artistsToShow.length === 0) {
+                 container.innerHTML = '<div class="text-center w-100"><p>Nenhum artista destacado encontrado.</p></div>';
+                 // Ensure carousel buttons are hidden if there are no artists
+                 elements.prevArtistBtn?.classList.add('hidden');
+                 elements.nextArtistBtn?.classList.add('hidden');
+                 return;
+            }
+
+             // Attempt to get Spotify token once before the loop
+             const token = await getSpotifyToken();
+             const spotifyAvailable = !!token;
+
+
+            artistsToShow.forEach(artist => {
+                const artistCard = document.createElement('div');
+                artistCard.className = 'slider-item';
+
+                // Creating the card structure
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card';
+
+                // Creating the image element
+                const img = document.createElement('img');
+                img.className = 'card-img-top';
+                img.alt = artist.name || 'Artista'; // Use artist name or default alt
+
+                 // Create the wrapper div for the image
+                 const imgContainer = document.createElement('div');
+                  // Add placeholder classes immediately
+                  imgContainer.className = 'card-img-placeholder placeholder-img-wrapper';
+                  // Match dimensions of card-img-top
+                   imgContainer.style.width = '100%';
+                   imgContainer.style.height = '200px';
+
+                  imgContainer.appendChild(img); // Append img inside wrapper
+
+                  const textSpan = document.createElement('span');
+                   textSpan.textContent = img.alt; // Use alt text for placeholder
+                   imgContainer.appendChild(textSpan);
+
+                  // Add initial placeholder appearance immediately
+                  handleImageError(img, 'medium');
+
+
+                 // --- Image Loading Logic ---
+                 let imageUrlToLoad = artist.img; // Start with the config image as fallback
+
+
+                 if (spotifyAvailable && artist.spotifyId) {
+                     // If Spotify is available and we have an ID, try fetching details for a better image
+                     // Use an IIFE or async within the loop to handle async calls per artist
+                     (async () => {
+                         const spotifyArtist = await getSpotifyArtistDetails(artist.spotifyId);
+                         if (spotifyArtist && spotifyArtist.images && spotifyArtist.images.length > 0) {
+                              // Found Spotify image, use the first (largest) one
+                              imageUrlToLoad = spotifyArtist.images[0].url;
+                              console.log(`Loaded Spotify image for ${artist.name}`);
+                         } else {
+                              console.warn(`Spotify found artist "${artist.name}" but no images or details fetch failed. Using fallback.`);
+                         }
+                         // Always attempt to load the determined image URL (could be Spotify or fallback)
+                         img.src = imageUrlToLoad;
+                         img.onload = () => { // Add onload to remove placeholder on success
+                               removePlaceholder(img);
+                               // Update carousel button visibility after images load (they affect width)
+                               setupCarouselNavButtons();
+                          };
+                          img.onerror = () => { // Re-attach error handler after src is set
+                               console.warn(`Failed to load image for artist "${artist.name}" from "${imageUrlToLoad}". Using placeholder.`);
+                               handleImageError(img, 'medium'); // Call handler on error
+                               // Update carousel button visibility even if images fail
+                               setupCarouselNavButtons();
+                          };
+                     })();
+                 } else {
+                      // Spotify not available or no Spotify ID, just use the config image
+                      console.log(`Spotify not available or no Spotify ID for ${artist.name}. Using config image.`);
+                       img.src = imageUrlToLoad;
+                       img.onload = () => { // Add onload to remove placeholder on success
+                            removePlaceholder(img);
+                            setupCarouselNavButtons();
+                       };
+                       img.onerror = () => { // Re-attach error handler after src is set
+                            console.warn(`Failed to load image for artist "${artist.name}" from "${imageUrlToLoad}". Using placeholder.`);
+                            handleImageError(img, 'medium'); // Call handler on error
+                            setupCarouselNavButtons();
+                       };
+                 }
+
+
+                // Creating the card body
+                const cardBody = document.createElement('div');
+                cardBody.className = 'card-body';
+                cardBody.innerHTML = `
+                    <h5 class="card-title">${artist.name || 'Artista Desconhecido'}</h5>
+                    ${artist.hasLocalFiles ? '<small class="text-muted">Conteúdo Local</small>' : '<small class="text-muted">Conteúdo Online</small>'}
+                `;
+
+                // Assembling the structure
+                cardDiv.appendChild(imgContainer); // Add the wrapper div
+                cardDiv.appendChild(cardBody);
+                artistCard.appendChild(cardDiv);
+
+                // Add click event listener to load the artist's albums
+                artistCard.addEventListener('click', () => {
+                     if (artist.name) { // Ensure artist name exists before loading
+                         loadArtistAlbums(artist.name);
+                     }
+                });
+
+                container.appendChild(artistCard);
+            });
+
+             // Setup carousel navigation buttons after artists are added to DOM
+             // This will be called again in the onload/onerror handlers for accuracy
+             setupCarouselNavButtons();
+        }
+
+        // Setup the carousel navigation buttons (now assumes they exist in static HTML)
+        function setupCarouselNavButtons() {
+            const container = elements.featuredArtists;
+            const prevButton = elements.prevArtistBtn;
+            const nextButton = elements.nextArtistBtn;
+
+            // Check if required elements exist
+            if (!container || !prevButton || !nextButton) {
+                console.error("Carousel elements not found in DOM.");
+                // Hide wrapper or handle gracefully if elements are missing
+                 const wrapper = container ? container.closest('.carousel-wrapper') : null;
+                 if(wrapper) wrapper.style.display = 'none';
+                return;
+            }
+
+            // Ensure listeners are only added once
+             if (!container.dataset.carouselListenersAdded) {
+                 container.dataset.carouselListenersAdded = 'true';
+
+                 const cardWidth = 220; // Width of the card + margin (adjust based on your CSS .slider-item margin)
+
+                 nextButton.addEventListener('click', function() {
+                     container.scrollBy({
+                         left: cardWidth * 3, // Scroll by 3 cards
+                         behavior: 'smooth'
+                     });
+                 });
+
+                 prevButton.addEventListener('click', function() {
+                     container.scrollBy({
+                         left: -cardWidth * 3, // Scroll back by 3 cards
+                         behavior: 'smooth'
+                     });
+                 });
+
+                 // Show/hide buttons based on scroll position
+                 function updateCarouselNavButtons() {
+                      // Use requestAnimationFrame for better performance with scrolling
+                      requestAnimationFrame(() => {
+                          // Add a small buffer (e.g., 5px) to account for potential floating point inaccuracies
+                          const scrollLeft = container.scrollLeft;
+                          const scrollWidth = container.scrollWidth;
+                          const clientWidth = container.clientWidth;
+
+                          prevButton.classList.toggle('hidden', scrollLeft <= 5);
+                          nextButton.classList.toggle('hidden', scrollLeft >= scrollWidth - clientWidth - 5);
+
+                           // Also hide both if container content is not wider than the container itself
+                          if (scrollWidth <= clientWidth + 1) { // Add tolerance
+                               prevButton.classList.add('hidden');
+                               nextButton.classList.add('hidden');
+                          }
+                      });
+                 }
+
+                 container.addEventListener('scroll', updateCarouselNavButtons);
+                 // Also update on window resize
+                  window.addEventListener('resize', updateCarouselNavButtons);
+                  // A brief timeout can help ensure elements are measured correctly after load/render
+                  setTimeout(updateCarouselNavButtons, 500);
+
+                  // Initial update
+                  updateCarouselNavButtons();
+             } else {
+                  // If listeners were already added, just update the button visibility
+                  requestAnimationFrame(() => {
+                       const wrapper = container.closest('.carousel-wrapper');
+                       if(wrapper) wrapper.style.display = ''; // Ensure wrapper is visible if it was hidden
+                       // Update visibility based on scroll position
+                       const scrollLeft = container.scrollLeft;
+                       const scrollWidth = container.scrollWidth;
+                       const clientWidth = container.clientWidth;
+                       elements.prevArtistBtn.classList.toggle('hidden', scrollLeft <= 5);
+                       elements.nextArtistBtn.classList.toggle('hidden', scrollLeft >= scrollWidth - clientWidth - 5);
+                        if (scrollWidth <= clientWidth + 1) { // Add tolerance
+                             elements.prevArtistBtn.classList.add('hidden');
+                             elements.nextArtistBtn.classList.add('hidden');
+                        }
+                  });
+             }
+        }
+
+
+        // Function to initialize the Vantajs background
+        function initVantaBackground() {
+            const header = elements.header;
+             // Stop any existing Vanta effect
+             if (window.vantaEffect) {
+                 window.vantaEffect.destroy();
+             }
+
+            // Available Vantajs effects and options
+            // Ensure you have included the JS files for the effects you list here
+            const effects = [
+                 { name: 'WAVES', options: {
+                     color: 0x1e3264, // Dark blue
+                     waveHeight: 15,
+                     waveSpeed: 0.75,
+                     shininess: 50,
+                     zoom: 0.9
+                 }},
+                 { name: 'NET', options: {
+                     color: 0x1DB954, // Spotify Green
+                     backgroundColor: 0x121212, // Dark background
+                     points: 8,
+                     maxDistance: 20,
+                     spacing: 15
+                 }},
+                 { name: 'BIRDS', options: {
+                     backgroundColor: 0x121212,
+                     color1: 0x1DB954, // Green
+                     color2: 0x1e3264, // Dark blue
+                     colorMode: "variance",
+                     wingSpan: 25.00,
+                     speedLimit: 4.00,
+                     separation: 50.00,
+                     alignment: 50.00,
+                     cohesion: 50.00,
+                     quantity: 3.00
+                 }},
+                 { name: 'RINGS', options: {
+                    backgroundColor: 0x121212,
+                    color: 0x1DB954,
+                    size: 1.5,
+                    maxDistance: 100
+                 }},
+                 { name: 'DOTS', options: {
+                    backgroundColor: 0x121212,
+                    size: 1.2,
+                    baseColor: 0x1DB954,
+                    amplitudeFactor: 0.5,
+                    xOffset: 0.5,
+                    yOffset: 0.5
+                 }}
+             ];
+
+            // Check if VANTA object is available and if Three.js is loaded
+            if (window.VANTA && window.THREE) {
+                try {
+                    // Choose a random effect
+                    const randomEffectConfig = effects[Math.floor(Math.random() * effects.length)];
+                    const effectName = randomEffectConfig.name;
+                    const options = randomEffectConfig.options;
+
+                    if (VANTA[effectName]) {
+                         window.vantaEffect = VANTA[effectName]({
+                             el: header, // Target the header element
+                             ...options, // Spread the specific effect options
+                             mouseControls: true,
+                             touchControls: true,
+                             gyroControls: false,
+                         });
+                         console.log(`Vantajs ${effectName} background initialized.`);
+                         // Optionally remove the CSS fallback background once Vanta is initialized
+                         header.style.background = 'none'; // Remove gradient if Vanta succeeds
+                    } else {
+                         console.warn(`Vantajs effect "${effectName}" not found. Falling back to CSS gradient.`);
+                         // Fallback is already applied via CSS initially
+                    }
+
+                } catch (error) {
+                    console.error('Error initializing Vantajs:', error);
+                    // Fallback is already applied via CSS initially
+                }
+            } else {
+                 console.warn("VANTA object or THREE object not found. Falling back to CSS gradient. Make sure Vantajs and Three.js scripts are loaded.");
+                 // Fallback is already applied via CSS initially
+            }
+        }
+
+
+        // Initialize the page
+        function init() {
+             // Setup initial placeholders immediately
+             setupInitialPlaceholders();
+             // Initialize the Vantajs background
+             initVantaBackground();
+
+            // Load featured artists
+            loadFeaturedArtists();
+
+            // Load a default artist/album on startup (e.g., Chico Correa)
+            // This ensures there is content displayed when the page loads
+             loadArtistAlbums('Chico Correa & Electronic Band');
+
+             // Initial setup for player state display
+             resetPlayerState(); // Use helper to ensure consistent initial state
+        }
+
+
+        // Start the application when the document is ready
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Clean up Vantajs on window unload (important for single-page apps or if header is removed)
+        window.addEventListener('beforeunload', () => {
+             if (window.vantaEffect) {
+                 window.vantaEffect.destroy();
+             }
+        });
+
+    </script>
+</body>
+</html>
